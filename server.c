@@ -6,11 +6,13 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h> // read(), write(), close()
+#include <openssl/sha.h>
 #define MAX 80
 #define PORT 8080
 #define SA struct sockaddr
+#define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
-// I used code from this website: https://www.geeksforgeeks.org/c/tcp-server-client-implementation-in-c/
+// I used code from this website as a base: https://www.geeksforgeeks.org/c/tcp-server-client-implementation-in-c/
 void func(int connfd)
 {
     char buff[MAX];
@@ -39,9 +41,25 @@ void func(int connfd)
     }
 }
 
+void generate_Sec_WebSocket_Accept(char* Sec_WebSocket_Key, char* Sec_WebSocket_Accept)
+{
+    char concat[200];
+    strcpy(concat, Sec_WebSocket_Key);
+    strcat(concat, GUID);
+    size_t len_concat = strlen(concat);
+
+    unsigned char hash[SHA_DIGEST_LENGTH];
+    SHA1(concat, len_concat, hash);
+
+    // base64_encode(concat);
+    strcpy(Sec_WebSocket_Accept, concat);
+}
+
 // Driver function
 int main()
 {
+
+
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
 
