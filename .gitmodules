@@ -1,0 +1,3 @@
+[submodule "NibbleAndAHalf"]
+	path = NibbleAndAHalf
+	url = https://github.com/superwills/NibbleAndAHalf.git
