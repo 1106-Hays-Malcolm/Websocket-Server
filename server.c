@@ -159,6 +159,7 @@ void func(int connfd)
             }
             printf("\n\n");
 
+            // Define all the fields in the WebSocket frame
             bool FIN, RSV1, RSV2, RSV3;
             u_int8_t opcode;
             bool MASK;
@@ -170,6 +171,7 @@ void func(int connfd)
             u_int8_t first_byte = buff[0];
             u_int8_t second_byte = buff[1];
 
+            // Use bitwise operations to extract the different fields from the frame
             FIN  = (first_byte & 0b10000000) >> 7;
             RSV1 = (first_byte & 0b01000000) >> 6;
             RSV2 = (first_byte & 0b00100000) >> 5;
@@ -228,7 +230,6 @@ void func(int connfd)
 // Driver function
 int main()
 {
-
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
 
