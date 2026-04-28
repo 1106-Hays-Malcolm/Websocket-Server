@@ -190,25 +190,24 @@ void func(int connfd)
             masking_key[1] = buff[3];
             masking_key[2] = buff[4];
             masking_key[3] = buff[5];
-            // masking_key = masking_key | (buff[2] << 0x18);
-            // masking_key = masking_key | (buff[3] << 0x10);
-            // masking_key = masking_key | (buff[4] << 0x08);
-            // masking_key = masking_key | (buff[5] << 0x00);
 
-            // printf("Mask key: 0x%04x\n", masking_key);
             for (int i = 0; i < 4; i++)
             {
                 printf("Mask: 0x%02x\n", masking_key[i]);
             }
 
+            char decoded_message[1000];
             u_int8_t mask_index = 0;
             for (int i = 0; i < payload_len; i++)
             {
                 printf("Char: %c\n", payload_data[i] ^ masking_key[mask_index]);
+                decoded_message[i] = payload_data[i] ^ masking_key[mask_index];
 
                 mask_index ++;
                 mask_index = mask_index % 4;
             }
+            decoded_message[payload_len] = '\0';
+            printf("Final message: %s\n", decoded_message);
         }
 
         // bzero(buff, MAX);
