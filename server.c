@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h> // read(), write(), close()
 #include <openssl/sha.h>
+#include <stdint.h>
 #include "NibbleAndAHalf/NibbleAndAHalf/base64.h"
 #define MAX 5000
 #define PORT 8080
@@ -115,7 +116,7 @@ void generate_response(char* Sec_WebSocket_Accept, char* response)
 void func(int connfd)
 {
     bool handshake = true;
-    char buff[MAX];
+    unsigned char buff[MAX];
     int n;
     // infinite loop for chat
     for (;;) {
@@ -125,7 +126,6 @@ void func(int connfd)
         read(connfd, buff, sizeof(buff));
         // print buffer which contains the client contents
         // printf("From client: %s\nTo client : ", buff);
-
 
         if (handshake)
         {
@@ -152,6 +152,29 @@ void func(int connfd)
             write(connfd, accept_response, strlen(accept_response));
 
             handshake = false;
+        }
+        else
+        {
+            printf("BYTES:\n\n");
+            for (int j = 0; j < 16; j++)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    printf("0x%01x ", buff[i + (4 * j)]);
+                }
+                printf("\n");
+            }
+            printf("\n\n");
+
+            bool FIN, RSV1, RSV2, RSV3;
+            u_int8_t opcode;
+            bool MASK;
+            u_int8_t payload_len;
+            u_int64_t ext_payload_len;
+            u_int32_t masking_key;
+            unsigned char* payload_data;
+
+
         }
 
         // bzero(buff, MAX);
