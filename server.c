@@ -41,7 +41,7 @@ size_t parse_html_headers(char* raw_headers, char names[][500], char values[][50
             else
                 bad = true;
 
-            split_line = strtok(NULL, "\n");
+            split_line = strtok(NULL, "\r\n");
             if (split_line != NULL)
                 // Because first character is always space
                 strcpy(value, &(split_line[1]));
@@ -55,7 +55,7 @@ size_t parse_html_headers(char* raw_headers, char names[][500], char values[][50
             }
         }
 
-        line = strtok_r(NULL, "\n", &line_save);
+        line = strtok_r(NULL, "\r\n", &line_save);
         index++;
     }
 
@@ -91,15 +91,30 @@ void generate_Sec_WebSocket_Accept(char* Sec_WebSocket_Key, unsigned char* Sec_W
 
     // Encode the hash with Base64
     int flen;
-    char* encoded = base64(hash, strlen(hash), &flen);
+    char* encoded = base64(hash, SHA_DIGEST_LENGTH, &flen);
 
     // Output the final accept key to Sec_WebSocket_Accept
-    strcpy(Sec_WebSocket_Accept, encoded);
+    for (int i = 0; i < flen; i++)
+    {
+        Sec_WebSocket_Accept[i] = encoded[i];
+    }
+    // strcpy(Sec_WebSocket_Accept, encoded);
+}
+
+void generate_response(char* Sec_WebSocket_Accept, char* response)
+{
+    char start_of_response[1000] = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
+    char end_of_response[1000] = "\r\nSec-WebSocket-Protocol: chat\r\n\r\n";
+
+    strcpy(response, start_of_response);
+    strcat(response, Sec_WebSocket_Accept);
+    strcat(response, end_of_response);
 }
 
 // I used code from this website as a base: https://www.geeksforgeeks.org/c/tcp-server-client-implementation-in-c/
 void func(int connfd)
 {
+    bool handshake = true;
     char buff[MAX];
     int n;
     // infinite loop for chat
@@ -110,22 +125,42 @@ void func(int connfd)
         read(connfd, buff, sizeof(buff));
         // print buffer which contains the client contents
         // printf("From client: %s\nTo client : ", buff);
-        char names[500][500];
-        char values[500][500];
-        size_t num_headers = parse_html_headers(buff, names, values);
-        char Sec_WebSocket_Key[500];
-        get_Sec_WebSocket_Key(num_headers, names, values, Sec_WebSocket_Key);
-        printf("KEY HERE: %s\n", Sec_WebSocket_Key);
-        unsigned char Sec_WebSocket_Accept[500];
-        generate_Sec_WebSocket_Accept(Sec_WebSocket_Key, Sec_WebSocket_Accept);
-        printf("ACCEPT KEY: %s\n", Sec_WebSocket_Accept);
-        bzero(buff, MAX);
-        n = 0;
+
+
+        if (handshake)
+        {
+            // Names and values of headers
+            char names[500][500];
+            char values[500][500];
+            size_t num_headers = parse_html_headers(buff, names, values);
+
+            // Get WebSocket key from parsed headers
+            char Sec_WebSocket_Key[500];
+            get_Sec_WebSocket_Key(num_headers, names, values, Sec_WebSocket_Key);
+            printf("KEY HERE: %s\n", Sec_WebSocket_Key);
+
+            // Generate accept key from WebSocket key
+            unsigned char Sec_WebSocket_Accept[500];
+            generate_Sec_WebSocket_Accept(Sec_WebSocket_Key, Sec_WebSocket_Accept);
+            printf("ACCEPT KEY: %s\n", Sec_WebSocket_Accept);
+
+            char accept_response[1000];
+            generate_response(Sec_WebSocket_Accept, accept_response);
+
+            printf("%s\n", accept_response);
+
+            write(connfd, accept_response, strlen(accept_response));
+
+            handshake = false;
+        }
+
+        // bzero(buff, MAX);
+        // n = 0;
         // copy server message in the buffer
-        while ((buff[n++] = getchar()) != '\n');
+        // while ((buff[n++] = getchar()) != '\n');
 
         // and send that buffer to client
-        write(connfd, buff, sizeof(buff));
+        // write(connfd, buff, sizeof(buff));
 
         // if msg contains "Exit" then server exit and chat ended.
         if (strncmp("exit", buff, 4) == 0) {
