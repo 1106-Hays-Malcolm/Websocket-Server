@@ -171,9 +171,35 @@ void func(int connfd)
             bool MASK;
             u_int8_t payload_len;
             u_int64_t ext_payload_len;
-            u_int32_t masking_key;
+            u_int8_t masking_key[4] = {0x0, 0x0, 0x0, 0x0};
             unsigned char* payload_data;
 
+            u_int8_t first_byte = buff[0];
+            u_int8_t second_byte = buff[1];
+
+            FIN  = (first_byte & 0b10000000) >> 7;
+            RSV1 = (first_byte & 0b01000000) >> 6;
+            RSV2 = (first_byte & 0b00100000) >> 5;
+            RSV3 = (first_byte & 0b00010000) >> 4;
+            opcode = (first_byte & 0b00001111);
+
+            MASK = (second_byte & 0b10000000) >> 7;
+            payload_len = (second_byte & 0b01111111);
+            printf("Payload length: %u\n", payload_len);
+            masking_key[0] = buff[2];
+            masking_key[1] = buff[3];
+            masking_key[2] = buff[4];
+            masking_key[3] = buff[5];
+            // masking_key = masking_key | (buff[2] << 0x18);
+            // masking_key = masking_key | (buff[3] << 0x10);
+            // masking_key = masking_key | (buff[4] << 0x08);
+            // masking_key = masking_key | (buff[5] << 0x00);
+
+            // printf("Mask key: 0x%04x\n", masking_key);
+            for (int i = 0; i < 4; i++)
+            {
+                printf("Mask: 0x%02x\n", masking_key[i]);
+            }
 
         }
 
