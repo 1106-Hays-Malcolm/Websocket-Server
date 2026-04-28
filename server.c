@@ -13,6 +13,10 @@
 #define SA struct sockaddr
 #define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
+#define bool _Bool
+#define true 1
+#define false 0
+
 void parse_html_headers(char* raw_headers, char names[][500], char values[][500])
 {
     printf("Raw headers: %s\n", raw_headers);
@@ -29,14 +33,26 @@ void parse_html_headers(char* raw_headers, char names[][500], char values[][500]
 
         if (index != 0)
         {
-            char* split_line_save;
-            char* split_line = strtok_r(line, ":", &split_line_save);
-            strcpy(name, split_line);
-            split_line = strtok_r(NULL, "\n", &split_line_save);
-            strcpy(value, split_line);
+            bool bad = false;
 
-            printf("Name: %s\n", name);
-            printf("Value: %s\n", value);
+            char* split_line = strtok(line, ":");
+            if (split_line != NULL)
+                strcpy(name, split_line);
+            else
+                bad = true;
+
+            split_line = strtok(NULL, "\n");
+            if (split_line != NULL)
+                // Because first character is always space
+                strcpy(value, &(split_line[1]));
+            else
+                bad = true;
+
+            if (!bad)
+            {
+                printf("Name:%s\n", name);
+                printf("Value:%s\n", value);
+            }
         }
 
         line = strtok_r(NULL, "\n", &line_save);
