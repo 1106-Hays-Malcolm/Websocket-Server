@@ -172,7 +172,7 @@ void func(int connfd)
             u_int8_t payload_len;
             u_int64_t ext_payload_len;
             u_int8_t masking_key[4] = {0x0, 0x0, 0x0, 0x0};
-            unsigned char* payload_data;
+            unsigned char* payload_data = &(buff[6]);
 
             u_int8_t first_byte = buff[0];
             u_int8_t second_byte = buff[1];
@@ -201,6 +201,14 @@ void func(int connfd)
                 printf("Mask: 0x%02x\n", masking_key[i]);
             }
 
+            u_int8_t mask_index = 0;
+            for (int i = 0; i < payload_len; i++)
+            {
+                printf("Char: %c\n", payload_data[i] ^ masking_key[mask_index]);
+
+                mask_index ++;
+                mask_index = mask_index % 4;
+            }
         }
 
         // bzero(buff, MAX);
