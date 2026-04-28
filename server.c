@@ -17,7 +17,7 @@
 #define true 1
 #define false 0
 
-void parse_html_headers(char* raw_headers, char names[][500], char values[][500])
+size_t parse_html_headers(char* raw_headers, char names[][500], char values[][500])
 {
     printf("Raw headers: %s\n", raw_headers);
     char* line_save;
@@ -50,45 +50,28 @@ void parse_html_headers(char* raw_headers, char names[][500], char values[][500]
 
             if (!bad)
             {
-                printf("Name:%s\n", name);
-                printf("Value:%s\n", value);
+                strcpy(names[index], name);
+                strcpy(values[index], value);
             }
         }
 
         line = strtok_r(NULL, "\n", &line_save);
         index++;
     }
-    printf("Exiting! Index: %d\n", index);
+
+    return index;
 }
 
-// I used code from this website as a base: https://www.geeksforgeeks.org/c/tcp-server-client-implementation-in-c/
-void func(int connfd)
+void get_Sec_WebSocket_Key(size_t num_headers, char names[][500], char values[][500], char* out)
 {
-    char buff[MAX];
-    int n;
-    // infinite loop for chat
-    for (;;) {
-        bzero(buff, MAX);
-
-        // read the message from client and copy it in buffer
-        read(connfd, buff, sizeof(buff));
-        // print buffer which contains the client contents
-        // printf("From client: %s\nTo client : ", buff);
-        char names[500][500];
-        char values[500][500];
-        parse_html_headers(buff, names, values);
-        bzero(buff, MAX);
-        n = 0;
-        // copy server message in the buffer
-        while ((buff[n++] = getchar()) != '\n');
-
-        // and send that buffer to client
-        write(connfd, buff, sizeof(buff));
-
-        // if msg contains "Exit" then server exit and chat ended.
-        if (strncmp("exit", buff, 4) == 0) {
-            printf("Server Exit...\n");
-            break;
+    printf("Num headers: %lu\n", num_headers);
+    for (int i = 0; i < num_headers; i++)
+    {
+        printf("Value comparing: %s\n", names[i]);
+        if (strcmp(names[i], "Sec-WebSocket-Key") == 0)
+        {
+            strcpy(out, values[i]);
+            return;
         }
     }
 }
@@ -113,6 +96,46 @@ void generate_Sec_WebSocket_Accept(char* Sec_WebSocket_Key, unsigned char* Sec_W
     // Output the final accept key to Sec_WebSocket_Accept
     strcpy(Sec_WebSocket_Accept, encoded);
 }
+
+// I used code from this website as a base: https://www.geeksforgeeks.org/c/tcp-server-client-implementation-in-c/
+void func(int connfd)
+{
+    char buff[MAX];
+    int n;
+    // infinite loop for chat
+    for (;;) {
+        bzero(buff, MAX);
+
+        // read the message from client and copy it in buffer
+        read(connfd, buff, sizeof(buff));
+        // print buffer which contains the client contents
+        // printf("From client: %s\nTo client : ", buff);
+        char names[500][500];
+        char values[500][500];
+        size_t num_headers = parse_html_headers(buff, names, values);
+        char Sec_WebSocket_Key[500];
+        get_Sec_WebSocket_Key(num_headers, names, values, Sec_WebSocket_Key);
+        printf("KEY HERE: %s\n", Sec_WebSocket_Key);
+        unsigned char Sec_WebSocket_Accept[500];
+        generate_Sec_WebSocket_Accept(Sec_WebSocket_Key, Sec_WebSocket_Accept);
+        printf("ACCEPT KEY: %s\n", Sec_WebSocket_Accept);
+        bzero(buff, MAX);
+        n = 0;
+        // copy server message in the buffer
+        while ((buff[n++] = getchar()) != '\n');
+
+        // and send that buffer to client
+        write(connfd, buff, sizeof(buff));
+
+        // if msg contains "Exit" then server exit and chat ended.
+        if (strncmp("exit", buff, 4) == 0) {
+            printf("Server Exit...\n");
+            break;
+        }
+    }
+}
+
+
 
 // Driver function
 int main()
