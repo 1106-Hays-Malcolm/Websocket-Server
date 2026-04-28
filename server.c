@@ -20,15 +20,12 @@
 
 size_t parse_html_headers(char* raw_headers, char names[][500], char values[][500])
 {
-    printf("Raw headers: %s\n", raw_headers);
     char* line_save;
     char* line = strtok_r(raw_headers, "\n", &line_save);
 
     int index = 0;
     while (line != NULL)
     {
-        printf("Line!\n");
-        printf("%s\n", line);
         char name[500] = {0};
         char value[500] = {0};
 
@@ -65,10 +62,8 @@ size_t parse_html_headers(char* raw_headers, char names[][500], char values[][50
 
 void get_Sec_WebSocket_Key(size_t num_headers, char names[][500], char values[][500], char* out)
 {
-    printf("Num headers: %lu\n", num_headers);
     for (int i = 0; i < num_headers; i++)
     {
-        printf("Value comparing: %s\n", names[i]);
         if (strcmp(names[i], "Sec-WebSocket-Key") == 0)
         {
             strcpy(out, values[i]);
@@ -147,15 +142,13 @@ void func(int connfd)
             char accept_response[1000];
             generate_response(Sec_WebSocket_Accept, accept_response);
 
-            printf("%s\n", accept_response);
-
             write(connfd, accept_response, strlen(accept_response));
 
             handshake = false;
         }
         else
         {
-            printf("BYTES:\n\n");
+            printf("RAW BYTES FROM CLIENT:\n\n");
             for (int j = 0; j < 16; j++)
             {
                 for (int i = 0; i < 4; i++)
@@ -191,21 +184,25 @@ void func(int connfd)
             masking_key[2] = buff[4];
             masking_key[3] = buff[5];
 
+            printf("Mask: ");
             for (int i = 0; i < 4; i++)
             {
-                printf("Mask: 0x%02x\n", masking_key[i]);
+                printf("0x%02x ", masking_key[i]);
             }
+            printf("\n\n");
 
             char decoded_message[1000];
             u_int8_t mask_index = 0;
             for (int i = 0; i < payload_len; i++)
             {
-                printf("Char: %c\n", payload_data[i] ^ masking_key[mask_index]);
+                // Every byte from the client needs to be decoded with an XOR cipher
+                // The decoded byte = raw byte XOR mask key at index MOD 4.
                 decoded_message[i] = payload_data[i] ^ masking_key[mask_index];
 
                 mask_index ++;
                 mask_index = mask_index % 4;
             }
+            // Null terminate the string
             decoded_message[payload_len] = '\0';
             printf("Final message: %s\n", decoded_message);
         }
@@ -231,13 +228,6 @@ void func(int connfd)
 // Driver function
 int main()
 {
-    unsigned char accept_key[200];
-    generate_Sec_WebSocket_Accept("dGhlIHNhbXBsZSBub25jZQ==", accept_key);
-    printf("%s\n", accept_key);
-    // for(int i = 0; i < strlen(accept_key); i++)
-    // {
-    //     printf("0x%02x\n", accept_key[i]);
-    // }
 
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
