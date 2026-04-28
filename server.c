@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h> // read(), write(), close()
 #include <openssl/sha.h>
+#include "NibbleAndAHalf/NibbleAndAHalf/base64.h"
 #define MAX 80
 #define PORT 8080
 #define SA struct sockaddr
@@ -41,24 +42,33 @@ void func(int connfd)
     }
 }
 
-void generate_Sec_WebSocket_Accept(char* Sec_WebSocket_Key, char* Sec_WebSocket_Accept)
+void generate_Sec_WebSocket_Accept(char* Sec_WebSocket_Key, unsigned char* Sec_WebSocket_Accept)
 {
     char concat[200];
     strcpy(concat, Sec_WebSocket_Key);
     strcat(concat, GUID);
-    size_t len_concat = strlen(concat);
 
     unsigned char hash[SHA_DIGEST_LENGTH];
-    SHA1(concat, len_concat, hash);
+    size_t concat_len = strlen(concat);
+    SHA1(concat, concat_len, hash);
+
+    int flen;
+    char* encoded = base64(hash, strlen(hash), &flen);
 
     // base64_encode(concat);
-    strcpy(Sec_WebSocket_Accept, concat);
+    strcpy(Sec_WebSocket_Accept, encoded);
 }
 
 // Driver function
 int main()
 {
-
+    unsigned char accept_key[200];
+    generate_Sec_WebSocket_Accept("dGhlIHNhbXBsZSBub25jZQ==", accept_key);
+    printf("%s\n", accept_key);
+    // for(int i = 0; i < strlen(accept_key); i++)
+    // {
+    //     printf("0x%02x\n", accept_key[i]);
+    // }
 
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
