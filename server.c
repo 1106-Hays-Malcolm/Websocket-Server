@@ -42,20 +42,24 @@ void func(int connfd)
     }
 }
 
+// Generates a key to prove to the client that the server supports the Websocket protocol
 void generate_Sec_WebSocket_Accept(char* Sec_WebSocket_Key, unsigned char* Sec_WebSocket_Accept)
 {
+    // Concatenate the client's key with the GUID
     char concat[200];
     strcpy(concat, Sec_WebSocket_Key);
     strcat(concat, GUID);
 
+    // Hash the concatenated string with SHA1
     unsigned char hash[SHA_DIGEST_LENGTH];
     size_t concat_len = strlen(concat);
     SHA1(concat, concat_len, hash);
 
+    // Encode the hash with Base64
     int flen;
     char* encoded = base64(hash, strlen(hash), &flen);
 
-    // base64_encode(concat);
+    // Output the final accept key to Sec_WebSocket_Accept
     strcpy(Sec_WebSocket_Accept, encoded);
 }
 
