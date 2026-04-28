@@ -8,10 +8,42 @@
 #include <unistd.h> // read(), write(), close()
 #include <openssl/sha.h>
 #include "NibbleAndAHalf/NibbleAndAHalf/base64.h"
-#define MAX 80
+#define MAX 5000
 #define PORT 8080
 #define SA struct sockaddr
 #define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
+void parse_html_headers(char* raw_headers, char names[][500], char values[][500])
+{
+    printf("Raw headers: %s\n", raw_headers);
+    char* line_save;
+    char* line = strtok_r(raw_headers, "\n", &line_save);
+
+    int index = 0;
+    while (line != NULL)
+    {
+        printf("Line!\n");
+        printf("%s\n", line);
+        char name[500] = {0};
+        char value[500] = {0};
+
+        if (index != 0)
+        {
+            char* split_line_save;
+            char* split_line = strtok_r(line, ":", &split_line_save);
+            strcpy(name, split_line);
+            split_line = strtok_r(NULL, "\n", &split_line_save);
+            strcpy(value, split_line);
+
+            printf("Name: %s\n", name);
+            printf("Value: %s\n", value);
+        }
+
+        line = strtok_r(NULL, "\n", &line_save);
+        index++;
+    }
+    printf("Exiting! Index: %d\n", index);
+}
 
 // I used code from this website as a base: https://www.geeksforgeeks.org/c/tcp-server-client-implementation-in-c/
 void func(int connfd)
@@ -25,7 +57,10 @@ void func(int connfd)
         // read the message from client and copy it in buffer
         read(connfd, buff, sizeof(buff));
         // print buffer which contains the client contents
-        printf("From client: %s\t To client : ", buff);
+        // printf("From client: %s\nTo client : ", buff);
+        char names[500][500];
+        char values[500][500];
+        parse_html_headers(buff, names, values);
         bzero(buff, MAX);
         n = 0;
         // copy server message in the buffer
@@ -91,6 +126,10 @@ int main()
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(PORT);
+
+    // Fix from: https://stackoverflow.com/questions/577885/what-are-the-use-cases-of-so-reuseaddr
+    int one = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 
     // Binding newly created socket to given IP and verification
     if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
