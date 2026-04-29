@@ -1,7 +1,7 @@
 console.log("Connecting!");
 const socket = new WebSocket('ws://localhost:8080');
 
-function Connect()
+function Send()
 {
     socket.send(`Button pressed!`);
 }
