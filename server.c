@@ -153,7 +153,7 @@ void func(int connfd)
             {
                 for (int i = 0; i < 4; i++)
                 {
-                    printf("0x%01x ", buff[i + (4 * j)]);
+                    printf("0x%02x ", buff[i + (4 * j)]);
                 }
                 printf("\n");
             }
